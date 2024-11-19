@@ -1,0 +1,163 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Poppins&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
+
+:root {
+    --primary: #212121;
+    --secondary: hsl(0, 0%, 9%);
+    --white: #ffffff;
+    --light-gray: #646464;
+    --gray: #323232;
+    --hover-gray: #232323;
+    --blue: #1e90ff;
+}
+
+*, html {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Open Sans', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--primary);
+    color: var(--white);
+    display: flex;
+    overflow: hidden;
+}
+
+/* Customize scrollbar */
+::-webkit-scrollbar {
+    width: 7px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--primary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--gray);
+    border-radius: 10px;
+}
+
+.sidebar {
+    background-color: var(--secondary);
+    width: 250px;
+    height: 100vh;
+    border: 1px solid var(--gray);
+    border-width: 0 1px 0 0;
+    padding: 1vh 0;
+}
+
+.sidebar .title {
+    display: flex;
+    align-items: center;
+    font-size: 10px;
+    font-weight: 700;
+    border: 1px solid var(--gray);
+    border-width: 1px 0 1px 0;
+    padding: 1vh 1vw;
+    height: 37.5px;
+}
+
+.content {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.tabs {
+    display: flex;
+    width: 100%;
+    height: 45px;
+    background-color: var(--secondary);
+    border: 1px solid var(--gray);
+    border-width: 0 0 1px 0;
+    padding-top: 1vh;
+}
+
+.tab {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--gray);
+    border-width: 1px 1px 0 0;
+    padding: 1vh 1vw;
+    cursor: pointer;
+}
+
+.tab:hover {
+    background-color: var(--hover-gray);
+}
+
+.tab.selected {
+    border-top-color: var(--blue);
+    background-color: var(--primary);
+}
+
+.tab.selected:hover {
+    background-color: var(--primary);
+}
+
+.tab p {
+    font-size: 13px;
+    margin: 0 1vw;
+}
+
+.tab svg {
+    width: 16px;
+    height: 16px;
+}
+
+.icon {
+    width: 14px;
+    height: 14px;
+}
+
+.file {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 1vh 1vw;
+}
+
+.file:hover {
+    background-color: var(--hover-gray);
+}
+
+.file.selected {
+    background-color: var(--gray);
+}
+
+.file.selected:hover {
+    background-color: var(--gray);
+}
+
+.file p {
+    font-size: 13px;
+    line-height: 1;
+    margin-left: 0.6vw;
+}
+
+.code {
+    overflow-y: auto;
+    overflow-x: auto;
+    padding: 2vh 1vw 0 0vw;
+    height: 100vh;
+}
+
+.code .line {
+    display: flex;
+    font-size: 13px;
+}
+
+.code .lineNumber {
+    color: var(--light-gray);
+    width: 30px;
+    text-align: right;
+    margin-right: 1vw;
+}
+
+.code .lineContent {
+    outline: none;
+}
