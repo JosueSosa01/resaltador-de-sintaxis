@@ -1,30 +1,15 @@
 const tokens = {
     'cpp': [
         {
-            token: 'data-type',
-            regex: /\b(int|float|double|char|void|bool)\b/g,
-            color: '#3BC1FF'
-        },
-        {
-            token: 'number',
-            regex: /\b[0-9]+\b/g,
-            color: '#B5CEA8'
-        },
-        {
-            token: 'operator',
-            regex: /(\+|\-|\*|\/|\=|\%|\&|\||\^|\<\<|\>\>)/g,
-            color: '#FFFFFF'
-        },
-        {
-            token: "string-start",
-            regex: /\"/g,
+            token: "string",
+            regex: /^".*/g,
             color: '#CE9178',
-            checkNext: "string-end"
+            checkEnd: /^(?!").*"$/g
         },
         {
-            token: "string-end",
-            regex: /\"/g,
-            color: '#CE9178'
+            token: "directive",
+            regex: /#(include)|\busing\b/g,
+            color: '#C586B6'
         },
         {
             token: "comment",
@@ -33,44 +18,138 @@ const tokens = {
             fullLine: true
         },
         {
-            token: "comment-start",
-            regex: /\/\*/g,
-            color: '#6A9955',
-            checkNext: "comment-end"
+            token: "import",
+            regex: /^<.*>/g,
+            color: '#CE9178'
         },
         {
-            token: "comment-end",
-            regex: /\*\//g,
-            color: '#6A9955'
+            token: "declarative",
+            regex: /\b(namespace|const)\b/g,
+            color: '#3F9CD6'
+        },
+        {
+            token: "type",
+            regex: /\b(int|char|float|double|bool|void|struct)\b/g,
+            color: '#3F9CD6'
+        },
+        {
+            token: "terminator",
+            regex: /^;$/g,
+            color: "#FFFFFF"
+        },
+        {
+            token: "delimiter",
+            regex: /^,|^\./g,
+            color: "#FFFFFF"
+        },
+        {
+            token: "enclosure",
+            regex: /{|}|^\[|^\]|\[\]/g,
+            color: "#FFD710"
+        },
+        {
+            token: "template",
+            regex: /\b([a-zA-Z_][a-zA-Z0-9_]*)\s*<.*>/g,
+            color: '#44C9B0'
+        },
+        {
+            token: "operator",
+            regex: /(\+|\-|\*|\/|\=|\%|\&|\||\^|\<\<|\>\>|\(|\)|\<|\>|\!|\:)/g,
+            color: "#FFFFFF"
         },
         {
             token: "keyword",
-            regex: /\b(if|else|while|for|do|switch|case|break|continue|return|using|include)\b/g,
+            regex: /\b(return|if|else|while|for|switch|case|break|continue|default)\b/g,
+            color: '#C586B6'
+        },
+        {
+            token: "number",
+            regex: /\b(\d+|\d+\.\d+)\b/g,
+            color: '#B5CE9B'
+        },
+        {
+            token: "function",
+            regex: /\b([a-zA-Z_][a-zA-Z0-9_]*)\b/g,
+            color: '#DCDC9D',
+            checkNext: /\(/g
+        },
+        {
+            token: "variable",
+            regex: /\b([a-zA-Z_][a-zA-Z0-9_]*)\b/g,
+            color: '#9CDCFE'
+        }
+    ],
+    py: [
+        {
+            token: "directive",
+            regex: /import/g,
+            color: '#C586B6'
+        },
+        {
+            token: "operator",
+            regex: /(\+|\-|\*|\/|\=|\%|\&|\||\^|\<\<|\>\>|\(|\)|\<|\>|\!|\:)/g,
+            color: "#FFFFFF"
+        },
+        {
+            token: "function",
+            regex: /\b([a-zA-Z_][a-zA-Z0-9_]*)\b/g,
+            color: '#DCDC9D',
+            checkNext: /\(/g
+        },
+        {
+            token: "variable",
+            regex: /\b([a-zA-Z_][a-zA-Z0-9_]*)\b/g,
+            color: '#9CDCFE'
+        },
+    ],
+    sql: [
+        {
+            token: 'data-type',
+            regex: /\b(INT|VARCHAR|TEXT|BOOLEAN|DATE|FLOAT|DOUBLE|CHAR|DECIMAL)\b/gi,
+            color: '#3BC1FF'
+        },
+        {
+            token: 'number',
+            regex: /\b[0-9]+(\.[0-9]+)?\b/g,
+            color: '#B5CEA8'
+        },
+        {
+            token: 'operator',
+            regex: /(\+|\-|\*|\/|\=|\%|\<|\>|\<=|\>=|\!=)/g,
+            color: '#FFFFFF'
+        },
+        {
+            token: "string",
+            regex: /(\"[^\"]*\"|\'[^\']*\')/g,
+            color: '#CE9178'
+        },
+        {
+            token: "comment",
+            regex: /(--[^\n]*|\/\*[\s\S]*?\*\/)/g,
+            color: '#6A9955',
+            fullLine: true
+        },
+        {
+            token: "keyword",
+            regex: /\b(SELECT|FROM|WHERE|INSERT|INTO|VALUES|UPDATE|SET|DELETE|CREATE|TABLE|JOIN|INNER|LEFT|RIGHT|FULL|ON|GROUP|BY|HAVING|ORDER|ASC|DESC|LIMIT|DISTINCT|AND|OR|NOT|IN|IS|NULL|LIKE|BETWEEN|UNION|ALL)\b/gi,
             color: '#C586B6'
         },
         {
             token: "function",
-            regex: /\b([a-zA-Z_][a-zA-Z0-9_]*)\s*(?=\()/g,
+            regex: /\b(COUNT|SUM|AVG|MIN|MAX|NOW|COALESCE|LENGTH|SUBSTRING|ROUND|CONCAT|UPPER|LOWER|TRIM)\b/gi,
             color: '#DCDCAA'
         },
         {
             token: "enclosure",
-            regex: /(\{|\})/g,
+            regex: /(\(|\))/g,
             color: '#FFFFFF'
         },
         {
             token: "constant",
-            regex: /\b(true|false|NULL|namespace)\b/g,
+            regex: /\b(TRUE|FALSE|NULL)\b/gi,
             color: '#3BC1FF'
-        },
-        {
-            token: "class",
-            regex: /\b([a-zA-Z_][a-zA-Z0-9_]*)\s*::\s*([a-zA-Z_][a-zA-Z0-9_]*)/g,
-            color: '#44C9B0'
         }
-    ],
-    'py': [],
-    'sql': []
+    ]
 }
 
 let files = [];
@@ -84,89 +163,138 @@ sidebar.addEventListener('dragover', (e) => {
     e.preventDefault();
 });
 
-console.log(tokens)
-
 
 function UpdateContent(f) {
-    const code = document.querySelector('.code');
+    const extension = f.name.split(".")[1];
 
+    const code = document.querySelector('.code');
     code.innerHTML = '';
 
     const lines = f.content.split('\n');
+
+    const tokenTitle = (token) => {
+        return token.token.replace("-end", "");
+    }
+
+    const createSpan = (token, word) => {
+        const span = document.createElement('span');
+        span.style.color = token.color;
+        span.title = tokenTitle(token);
+
+        word = word.replaceAll("\t", "    ")
+
+        if (word.includes('<') && word.includes('>')) {
+            const [before, after] = word.split(/</);
+            span.innerHTML = `${before}<<span style="color:${token.color};">${after}</span>`;
+        } else {
+            span.innerHTML = word;
+        }
+
+        return span;
+    };
 
     lines.forEach((line, index) => {
         const lineElement = document.createElement('div');
         lineElement.classList.add('line');
 
-        let pre = '<pre class="lineContent">';
+        const pre = document.createElement('pre');
+        pre.classList.add('lineContent');
 
         const words = line.split(' ');
 
+        let globalToken = null;
+
         for(let i = 0; i < words.length; i++) {
-            let word = words[i];
-            let token = null;
-
-            const extension = selectedFile.name.split(".")[1];
-
-            if(!tokens[extension]) {
-                pre += `<span>${word} </span>`;
-                continue;
-            } else {
-                const tokenList = tokens[extension];
-
-                tokenList.forEach((t) => {
-                    if(t.regex.test(word)) {
-                        if(t.fullLine) {
-                            token = t;
-                            word = words.slice(i).join(' ');
-
-                            i = words.length;
-                        }
-
-                        if(t.checkNext) {
-                            let endToken = tokenList.find((token) => token.token === t.checkNext);
-
-                            let j = i + 1;
-                            let newWord = word;
-
-                            while(j < words.length) {
-                                newWord += ` ${words[j]}`;
-
-                                if(endToken.regex.test(words[j])) {
-                                    token = t;
-                                    word = newWord;
-                                    i = j;
-                                    break;
-                                }
-
-                                j++;
-                            }
-                        } else {
-                            token = t;
-                        }
-                    }
-                });
+            if(globalToken && globalToken.fullLine) {
+                const content = words.slice(i-1).join(' ');
+                const span = createSpan(globalToken, content);
+                pre.appendChild(span);
+                globalToken = null;
+                break;
             }
 
-            if(token) {
-                pre += `<span style="color: ${token.color}" title="${token.token.replace("-end", "")}">${word}</span> `;
-            } else {
-                pre += `<span style="color: #8CDCFE" title="variable">${word}</span> `;
+            let word = words[i];
+            const splitWords = word.split(/(\/\/|\+|\-|\*|\/|\=|\%|\&|\||\^|\<\<|\>\>|\;|\!|\)|\()/g);
+            
+            for(let j = 0; j < splitWords.length; j++) {
+                let splitWord = splitWords[j];
+
+                for(let t = 0; t < tokens[extension].length; t++) {
+                    let testToken = tokens[extension][t];
+
+                    const match = testToken.regex.test(splitWord);
+
+                    if (match == true || match) {
+                        testToken.regex.lastIndex = 0;
+
+                        if (testToken.fullLine) {
+                            globalToken = testToken;
+                            break;
+                        }
+                        else if (testToken.checkNext) {
+                            let nextWord = splitWords[j+1] ? splitWords[j+1] : words[i+1];
+                            const nextMatch = testToken.checkNext.test(nextWord);
+                            
+                            if (nextMatch == true || nextMatch) {
+                                const span = createSpan(testToken, ` ${splitWord}`);
+                                pre.appendChild(span);
+                                break;
+                            }
+                        }
+                        else if(testToken.checkEnd) {
+                            let found = false;
+                            let endWord = splitWord;
+
+                            const remainingWords = [...splitWords.slice(j+1), ...words.slice(i+1)];
+
+                            for(let k = 0; k < remainingWords.length; k++) {
+                                endWord += ` ${remainingWords[k]}`;
+
+                                const endMatch = testToken.regex.test(remainingWords[k]);
+                                testToken.regex.lastIndex = 0;
+
+                                if(testToken.checkEnd.test(remainingWords[k]) == true || testToken.checkEnd.test(remainingWords[k])) {
+                                    testToken.checkEnd.lastIndex = 0;
+
+                                    if(k < splitWords.length-1) {
+                                        j = k;
+                                    } else {
+                                        i = i + k + 1;
+                                    }
+                                    
+                                    const span = createSpan(testToken, ` ${endWord}`);
+                                    pre.appendChild(span);
+                                    found = true;
+                                    break;
+                                }
+                            }
+
+                            if(found) break;
+                        }
+                        else {
+                            const span = createSpan(testToken, ` ${splitWord}`);
+                            pre.appendChild(span);
+                            break;
+                        }
+                    } else {
+                        if(t == tokens[extension].length-1 && splitWord.replaceAll(" ", "").replaceAll("\t", "") != "") {
+                            const span = document.createElement('span');
+                            span.style.color = 'red';
+                            span.innerHTML = ` ${splitWord}`;
+
+                            pre.appendChild(span);
+                        }
+                    }
+                }
             }
         }
 
-        lineElement.innerHTML = `
-            <p class="lineNumber">${index+1}</p>
-            ${pre}</pre>
-        `;
+        const lineNumber = document.createElement('p');
+        lineNumber.classList.add('lineNumber');
+        lineNumber.innerHTML = index+1;
 
-        lineElement.children[1].addEventListener('input', (e) => {
-            if(e.target.innerText == '\n') {
-                f.content = f.content + '\n';
-
-                UpdateContent(f);
-            }
-        });
+        lineElement.appendChild(lineNumber);
+        lineElement.appendChild(pre);
 
         code.appendChild(lineElement);
     });
@@ -241,8 +369,6 @@ function createTab(f) {
 
         if(selectedFile === f) {
             const tabIndex = openFiles.findIndex((file) => file.name === f.name);
-
-            console.log(tabIndex);
         }
     });
 

@@ -142,7 +142,7 @@ body {
 .code {
     overflow-y: auto;
     overflow-x: auto;
-    padding: 2vh 1vw 0 0vw;
+    padding: 2vh 1vw 15vw 0vw;
     height: 100vh;
 }
 
