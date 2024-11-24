@@ -163,6 +163,67 @@ sidebar.addEventListener('dragover', (e) => {
     e.preventDefault();
 });
 
+// Función para procesar un archivo
+function processFile(file) {
+    return new Promise((resolve) => {
+        const extension = file.name.split(".").pop();
+        const lines = file.content.split('\n');
+        const processedLines = lines.map((line, index) => {
+            const lineElement = document.createElement('div');
+            lineElement.classList.add('line');
+
+            const lineNumber = document.createElement('p');
+            lineNumber.classList.add('lineNumber');
+            lineNumber.innerText = index + 1;
+
+            const pre = document.createElement('pre');
+            pre.classList.add('lineContent');
+
+            const words = line.split(' ');
+            let globalToken = null;
+
+            words.forEach((word) => {
+                let foundToken = null;
+
+                for (let tokenDef of tokens[extension] || []) {
+                    if (tokenDef.regex.test(word)) {
+                        foundToken = tokenDef;
+                        tokenDef.regex.lastIndex = 0;
+                        break;
+                    }
+                }
+
+                const span = document.createElement('span');
+                span.style.color = foundToken ? foundToken.color : 'inherit';
+                span.innerHTML = word.replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+                span.title = foundToken ? foundToken.token : '';
+                pre.appendChild(span);
+                pre.appendChild(document.createTextNode(' ')); // Espacio después de cada palabra
+            });
+
+            lineElement.appendChild(lineNumber);
+            lineElement.appendChild(pre);
+            return lineElement;
+        });
+
+        resolve({ file, processedLines });
+    });
+}
+
+// Función para actualizar el contenido en paralelo
+async function UpdateContentParallel() {
+    const codeContainer = document.querySelector('.code');
+    codeContainer.innerHTML = ''; // Limpiar el contenedor
+
+    const processingTasks = openFiles.map((file) => processFile(file));
+
+    const results = await Promise.all(processingTasks);
+
+    results.forEach(({ file, processedLines }) => {
+        processedLines.forEach((lineElement) => codeContainer.appendChild(lineElement));
+    });
+}
+
 
 function UpdateContent(f) {
     const extension = f.name.split(".")[1];
@@ -344,141 +405,75 @@ function langIcon(fileName) {
     }`
 }
 
-function createTab(f) {
+// Crear nueva pestaña
+function createTab(file) {
     const tab = document.createElement('div');
     tab.classList.add('tab', 'selected');
-
     tab.innerHTML = `
-        ${langIcon(f.name)}
-        <p>${f.name}</p>
-        <svg
-            width="32"
-            height="32"
-            viewBox="0 0 32 32"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-        >
-            <path d="M25 7L7 25" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M25 25L7 7" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <p>${file.name}</p>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M2 2L14 14" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            <path d="M2 14L14 2" stroke="white" stroke-width="2" stroke-linecap="round"/>
         </svg>
     `;
 
-    tab.children[2].addEventListener('click', (e) => {
-        openFiles = openFiles.filter((file) => file !== f);
+    tab.querySelector('svg').addEventListener('click', (e) => {
+        e.stopPropagation();
+        openFiles = openFiles.filter(f => f !== file);
         tab.remove();
-
-        if(selectedFile === f) {
-            const tabIndex = openFiles.findIndex((file) => file.name === f.name);
-        }
+        UpdateContentParallel();
     });
 
-    const tabsChildren = Array.from(tabs.children);
-
-    tabsChildren.forEach((child, index) => {
-        child.classList.remove('selected');
-    });
-
-    tab.addEventListener("click", (e) => {
-        const tabsChildren = Array.from(tabs.children);
-        const sidebarChildren = Array.from(sidebar.children);
-
-        if(e.target != tab.children[2]) {
-            tabsChildren.forEach((child) => {
-                if(child === tab) {
-                    tab.classList.add('selected');
-                } else {
-                    child.classList.remove('selected');
-                }
-            });
-
-            const sidebarChild = files.findIndex((file) => file.name === f.name);
-
-            sidebarChildren.forEach((child, index) => {
-                if(index === sidebarChild+1) {
-                    child.classList.add('selected');
-                } else {
-                    child.classList.remove('selected');
-                }
-            });
-
-            selectedFile = f;
-            
-            UpdateContent(f);
-        }
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('selected'));
+        tab.classList.add('selected');
+        UpdateContentParallel();
     });
 
     tabs.appendChild(tab);
 }
 
-function createNewFile(f) {
-    const file = document.createElement('div');
-    file.classList.add('file');
-
-    file.innerHTML = `
-        ${langIcon(f.name)}
-        <p>${f.name.substring(0,22)}${f.name.length > 22 ? '...' : ''}</p>
+// Función para crear una nueva entrada en el sidebar
+function createNewFile(file) {
+    const fileElement = document.createElement('div');
+    fileElement.classList.add('file');
+    fileElement.innerHTML = `
+        <p>${file.name.substring(0, 22)}${file.name.length > 22 ? '...' : ''}</p>
     `;
 
-    file.addEventListener("click", (e) => {
-        const sidebarChildren = Array.from(sidebar.children);
-        const tabsChildren = Array.from(tabs.children);
-
-        sidebarChildren.forEach((child) => {
-            if(child === file) {
-                file.classList.add('selected');
-            } else {
-                child.classList.remove('selected');
-            }
-        });
-
-        tabsChildren.forEach((child) => {
-            if(child.children[1].innerHTML == f.name) {
-                child.classList.add('selected');
-            } else {
-                child.classList.remove('selected');
-            }
-        })
-
-        selectedFile = f;
-
-        if(!openFiles.includes(f)) {
-            openFiles.push(f);
-
-            createTab(f);
-        };
-
-        UpdateContent(f);
+    fileElement.addEventListener("click", () => {
+        if (!openFiles.includes(file)) {
+            openFiles.push(file);
+            createTab(file);
+        }
+        UpdateContentParallel();
     });
 
-    sidebar.appendChild(file);
+    sidebar.appendChild(fileElement);
 }
 
+// Cargar archivos desde drag & drop
+sidebar.addEventListener('dragover', (e) => e.preventDefault());
 sidebar.addEventListener('drop', (e) => {
     e.preventDefault();
 
-    const uploadedFiles = e.dataTransfer.files;
-
-    for (let i = 0; i < uploadedFiles.length; i++) {
+    [...e.dataTransfer.files].forEach((uploadedFile) => {
         const reader = new FileReader();
 
-        if(files.find((file) => file.name === uploadedFiles[i].name)) {
-            alert(`El archivo ${uploadedFiles[i].name} ya ha sido cargado`);
-            continue;
+        if (files.find((f) => f.name === uploadedFile.name)) {
+            alert(`El archivo ${uploadedFile.name} ya ha sido cargado.`);
+            return;
         }
 
-        reader.onload = (e) => {
-            const fileContent = e.target.result;
+        reader.onload = (event) => {
+            const file = {
+                name: uploadedFile.name,
+                content: event.target.result,
+            };
+            files.push(file);
+            createNewFile(file);
+        };
 
-            const fileObject = {
-                name: uploadedFiles[i].name,
-                content: fileContent
-            }
-
-            files.push(fileObject);
-
-            createNewFile(fileObject);
-        }
-
-        reader.readAsText(uploadedFiles[i]);
-    }
+        reader.readAsText(uploadedFile);
+    });
 });
