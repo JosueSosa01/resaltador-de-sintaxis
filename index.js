@@ -164,141 +164,149 @@ sidebar.addEventListener('dragover', (e) => {
 });
 
 
-function UpdateContent(f) {
+async function UpdateContent(f) {
     const extension = f.name.split(".")[1];
 
     const code = document.querySelector('.code');
-    code.innerHTML = '';
+    code.innerHTML = ''; // Limpiar el contenido existente
 
-    const lines = f.content.split('\n');
+    try {
+        // Procesar contenido con el Worker
+        const result = await processWithWorker(f.content);
 
-    const tokenTitle = (token) => {
-        return token.token.replace("-end", "");
-    }
+        // Dividir el contenido procesado por líneas
+        const lines = result.split('\n');
 
-    const createSpan = (token, word) => {
-        const span = document.createElement('span');
-        span.style.color = token.color;
-        span.title = tokenTitle(token);
+        // Función para generar títulos de tokens
+        const tokenTitle = (token) => {
+            return token.token.replace("-end", "");
+        };
 
-        word = word.replaceAll("\t", "    ")
+        // Función para crear spans coloreados
+        const createSpan = (token, word) => {
+            const span = document.createElement('span');
+            span.style.color = token.color;
+            span.title = tokenTitle(token);
 
-        if (word.includes('<') && word.includes('>')) {
-            const [before, after] = word.split(/</);
-            span.innerHTML = `${before}<<span style="color:${token.color};">${after}</span>`;
-        } else {
-            span.innerHTML = word;
-        }
+            word = word.replaceAll("\t", "    ");
 
-        return span;
-    };
-
-    lines.forEach((line, index) => {
-        const lineElement = document.createElement('div');
-        lineElement.classList.add('line');
-
-        const pre = document.createElement('pre');
-        pre.classList.add('lineContent');
-
-        const words = line.split(' ');
-
-        let globalToken = null;
-
-        for(let i = 0; i < words.length; i++) {
-            if(globalToken && globalToken.fullLine) {
-                const content = words.slice(i-1).join(' ');
-                const span = createSpan(globalToken, content);
-                pre.appendChild(span);
-                globalToken = null;
-                break;
+            if (word.includes('<') && word.includes('>')) {
+                const [before, after] = word.split(/</);
+                span.innerHTML = `${before}<<span style="color:${token.color};">${after}</span>`;
+            } else {
+                span.innerHTML = word;
             }
 
-            let word = words[i];
-            const splitWords = word.split(/(\/\/|\+|\-|\*|\/|\=|\%|\&|\||\^|\<\<|\>\>|\;|\!|\)|\()/g);
-            
-            for(let j = 0; j < splitWords.length; j++) {
-                let splitWord = splitWords[j];
+            return span;
+        };
 
-                for(let t = 0; t < tokens[extension].length; t++) {
-                    let testToken = tokens[extension][t];
+        // Procesar línea por línea
+        lines.forEach((line, index) => {
+            const lineElement = document.createElement('div');
+            lineElement.classList.add('line');
 
-                    const match = testToken.regex.test(splitWord);
+            const pre = document.createElement('pre');
+            pre.classList.add('lineContent');
 
-                    if (match == true || match) {
-                        testToken.regex.lastIndex = 0;
+            const words = line.split(' ');
+            let globalToken = null;
 
-                        if (testToken.fullLine) {
-                            globalToken = testToken;
-                            break;
-                        }
-                        else if (testToken.checkNext) {
-                            let nextWord = splitWords[j+1] ? splitWords[j+1] : words[i+1];
-                            const nextMatch = testToken.checkNext.test(nextWord);
-                            
-                            if (nextMatch == true || nextMatch) {
+            for (let i = 0; i < words.length; i++) {
+                if (globalToken && globalToken.fullLine) {
+                    const content = words.slice(i - 1).join(' ');
+                    const span = createSpan(globalToken, content);
+                    pre.appendChild(span);
+                    globalToken = null;
+                    break;
+                }
+
+                let word = words[i];
+                const splitWords = word.split(/(\/\/|\+|\-|\*|\/|\=|\%|\&|\||\^|\<\<|\>\>|\;|\!|\)|\()/g);
+
+                for (let j = 0; j < splitWords.length; j++) {
+                    let splitWord = splitWords[j];
+
+                    for (let t = 0; t < tokens[extension].length; t++) {
+                        let testToken = tokens[extension][t];
+
+                        const match = testToken.regex.test(splitWord);
+
+                        if (match == true || match) {
+                            testToken.regex.lastIndex = 0;
+
+                            if (testToken.fullLine) {
+                                globalToken = testToken;
+                                break;
+                            } else if (testToken.checkNext) {
+                                let nextWord = splitWords[j + 1] ? splitWords[j + 1] : words[i + 1];
+                                const nextMatch = testToken.checkNext.test(nextWord);
+
+                                if (nextMatch == true || nextMatch) {
+                                    const span = createSpan(testToken, ` ${splitWord}`);
+                                    pre.appendChild(span);
+                                    break;
+                                }
+                            } else if (testToken.checkEnd) {
+                                let found = false;
+                                let endWord = splitWord;
+
+                                const remainingWords = [...splitWords.slice(j + 1), ...words.slice(i + 1)];
+
+                                for (let k = 0; k < remainingWords.length; k++) {
+                                    endWord += ` ${remainingWords[k]}`;
+
+                                    const endMatch = testToken.regex.test(remainingWords[k]);
+                                    testToken.regex.lastIndex = 0;
+
+                                    if (testToken.checkEnd.test(remainingWords[k]) == true || testToken.checkEnd.test(remainingWords[k])) {
+                                        testToken.checkEnd.lastIndex = 0;
+
+                                        if (k < splitWords.length - 1) {
+                                            j = k;
+                                        } else {
+                                            i = i + k + 1;
+                                        }
+
+                                        const span = createSpan(testToken, ` ${endWord}`);
+                                        pre.appendChild(span);
+                                        found = true;
+                                        break;
+                                    }
+                                }
+
+                                if (found) break;
+                            } else {
                                 const span = createSpan(testToken, ` ${splitWord}`);
                                 pre.appendChild(span);
                                 break;
                             }
-                        }
-                        else if(testToken.checkEnd) {
-                            let found = false;
-                            let endWord = splitWord;
+                        } else {
+                            if (t == tokens[extension].length - 1 && splitWord.replaceAll(" ", "").replaceAll("\t", "") != "") {
+                                const span = document.createElement('span');
+                                span.style.color = 'red';
+                                span.innerHTML = ` ${splitWord}`;
 
-                            const remainingWords = [...splitWords.slice(j+1), ...words.slice(i+1)];
-
-                            for(let k = 0; k < remainingWords.length; k++) {
-                                endWord += ` ${remainingWords[k]}`;
-
-                                const endMatch = testToken.regex.test(remainingWords[k]);
-                                testToken.regex.lastIndex = 0;
-
-                                if(testToken.checkEnd.test(remainingWords[k]) == true || testToken.checkEnd.test(remainingWords[k])) {
-                                    testToken.checkEnd.lastIndex = 0;
-
-                                    if(k < splitWords.length-1) {
-                                        j = k;
-                                    } else {
-                                        i = i + k + 1;
-                                    }
-                                    
-                                    const span = createSpan(testToken, ` ${endWord}`);
-                                    pre.appendChild(span);
-                                    found = true;
-                                    break;
-                                }
+                                pre.appendChild(span);
                             }
-
-                            if(found) break;
-                        }
-                        else {
-                            const span = createSpan(testToken, ` ${splitWord}`);
-                            pre.appendChild(span);
-                            break;
-                        }
-                    } else {
-                        if(t == tokens[extension].length-1 && splitWord.replaceAll(" ", "").replaceAll("\t", "") != "") {
-                            const span = document.createElement('span');
-                            span.style.color = 'red';
-                            span.innerHTML = ` ${splitWord}`;
-
-                            pre.appendChild(span);
                         }
                     }
                 }
             }
-        }
 
-        const lineNumber = document.createElement('p');
-        lineNumber.classList.add('lineNumber');
-        lineNumber.innerHTML = index+1;
+            const lineNumber = document.createElement('p');
+            lineNumber.classList.add('lineNumber');
+            lineNumber.innerHTML = index + 1;
 
-        lineElement.appendChild(lineNumber);
-        lineElement.appendChild(pre);
+            lineElement.appendChild(lineNumber);
+            lineElement.appendChild(pre);
 
-        code.appendChild(lineElement);
-    });
-};
+            code.appendChild(lineElement);
+        });
+    } catch (error) {
+        console.error('Error procesando el archivo con el Worker:', error);
+    }
+}
+
 
 function langIcon(fileName) {
     return `${
@@ -482,3 +490,26 @@ sidebar.addEventListener('drop', (e) => {
         reader.readAsText(uploadedFiles[i]);
     }
 });
+
+// Verifica si el navegador soporta Workers
+if (window.Worker) {
+    const myWorker = new Worker('worker.js');
+
+    // Procesar contenido con el Worker
+    function processWithWorker(content) {
+        return new Promise((resolve, reject) => {
+            myWorker.postMessage({ data: content });
+
+            // Recibir respuesta del Worker
+            myWorker.onmessage = function(event) {
+                resolve(event.data.result);
+            };
+
+            myWorker.onerror = function(error) {
+                reject(error);
+            };
+        });
+    }
+}
+
+
