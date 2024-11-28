@@ -1,3 +1,4 @@
+const startTime = Date.now(); // Tiempo inicial
 // worker.js
 
 self.onmessage = function (event) {
@@ -14,3 +15,7 @@ self.onmessage = function (event) {
         result: result // Modifica esta lógica según lo que necesites procesar
     });
 };
+
+// Fin del código original
+const endTime = Date.now(); // Tiempo final
+console.log(`El tiempo de ejecución fue: ${endTime - startTime} ms`);

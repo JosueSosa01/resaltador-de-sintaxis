@@ -1,3 +1,5 @@
+const startTime = Date.now(); // Tiempo inicial
+
 const tokens = {
     'cpp': [
         {
@@ -595,4 +597,7 @@ if (window.Worker) {
     }
 }
 
+// Fin del código original
+const endTime = Date.now(); // Tiempo final
+console.log(`El tiempo de ejecución fue: ${endTime - startTime} ms`);
 
