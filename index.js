@@ -461,35 +461,118 @@ function createNewFile(f) {
     sidebar.appendChild(file);
 }
 
-sidebar.addEventListener('drop', (e) => {
+//sidebar.addEventListener('drop', (e) => {
+  //  e.preventDefault();
+
+    //const uploadedFiles = e.dataTransfer.files;
+
+    //for (let i = 0; i < uploadedFiles.length; i++) {
+      //  const reader = new FileReader();
+
+        //if(files.find((file) => file.name === uploadedFiles[i].name)) {
+          //  alert(`El archivo ${uploadedFiles[i].name} ya ha sido cargado`);
+            //continue;
+        //}
+
+        //reader.onload = (e) => {
+          //  const fileContent = e.target.result;
+
+            //const fileObject = {
+              //  name: uploadedFiles[i].name,
+                //content: fileContent
+            //}
+
+            //files.push(fileObject);
+
+            //createNewFile(fileObject);
+        //}
+
+        //reader.readAsText(uploadedFiles[i]);
+    //}
+//});
+
+const loadedFiles = new Set(); // Usamos un Set para evitar duplicados
+
+sidebar.addEventListener('drop', async (e) => {
     e.preventDefault();
 
-    const uploadedFiles = e.dataTransfer.files;
+    const uploadedItems = Array.from(e.dataTransfer.items);
 
-    for (let i = 0; i < uploadedFiles.length; i++) {
-        const reader = new FileReader();
+    for (const item of uploadedItems) {
+        const entry = item.webkitGetAsEntry();
 
-        if(files.find((file) => file.name === uploadedFiles[i].name)) {
-            alert(`El archivo ${uploadedFiles[i].name} ya ha sido cargado`);
-            continue;
-        }
+        if (!entry) continue;
 
-        reader.onload = (e) => {
-            const fileContent = e.target.result;
-
-            const fileObject = {
-                name: uploadedFiles[i].name,
-                content: fileContent
+        if (entry.isFile) {
+            // Si es un archivo
+            const file = item.getAsFile();
+            if (loadedFiles.has(file.name)) {
+                console.warn(`El archivo ${file.name} ya está cargado`);
+                continue;
             }
 
+            const fileContent = await readFileContent(file);
+
+            const fileObject = {
+                name: file.name,
+                content: fileContent,
+            };
+
             files.push(fileObject);
-
+            loadedFiles.add(file.name); // Agregar archivo al conjunto
             createNewFile(fileObject);
+        } else if (entry.isDirectory) {
+            // Si es una carpeta
+            await processDirectory(entry);
         }
-
-        reader.readAsText(uploadedFiles[i]);
     }
 });
+
+// Función para leer archivos
+function readFileContent(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = (error) => reject(error);
+        reader.readAsText(file);
+    });
+}
+
+// Procesar directorios recursivamente
+async function processDirectory(directoryEntry) {
+    const reader = directoryEntry.createReader();
+
+    return new Promise((resolve, reject) => {
+        reader.readEntries(async (entries) => {
+            for (const entry of entries) {
+                if (entry.isFile) {
+                    entry.file(async (file) => {
+                        if (loadedFiles.has(file.name)) {
+                            console.warn(`El archivo ${file.name} ya está cargado`);
+                            return;
+                        }
+
+                        const fileContent = await readFileContent(file);
+
+                        const fileObject = {
+                            name: file.name,
+                            content: fileContent,
+                        };
+
+                        files.push(fileObject);
+                        loadedFiles.add(file.name); // Agregar archivo al conjunto
+                        createNewFile(fileObject);
+                    });
+                } else if (entry.isDirectory) {
+                    // Llamada recursiva para procesar subdirectorios
+                    await processDirectory(entry);
+                }
+            }
+            resolve();
+        }, reject);
+    });
+}
+
 
 // Verifica si el navegador soporta Workers
 if (window.Worker) {
